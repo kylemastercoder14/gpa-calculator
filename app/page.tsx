@@ -1,113 +1,250 @@
-import Image from 'next/image'
+"use client";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import React from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useState } from "react";
+import { AiFillGithub, AiFillFacebook, AiFillInstagram } from "react-icons/ai";
+import LoadingState from "@/components/LoadingState";
 
 export default function Home() {
+  const [showLoader, setShowLoader] = React.useState(false);
+  const [finishedLoading, setFinishedLoading] = React.useState(false);
+  const [subjects, setSubjects] = useState<
+    { name: string; grade: string; credits: string }[]
+  >([{ name: "", grade: "", credits: "" }]);
+
+  const [gpa, setGPA] = useState(0);
+
+  const handleAddSubject = () => {
+    setSubjects([...subjects, { name: "", grade: "", credits: "" }]);
+  };
+
+  type SubjectField = "name" | "grade" | "credits";
+
+  const handleSubjectChange = (
+    index: number,
+    field: SubjectField,
+    value: string
+  ) => {
+    const updatedSubjects = [...subjects];
+    updatedSubjects[index][field] = value;
+    setSubjects(updatedSubjects);
+  };
+
+  const computeGPA = () => {
+    setShowLoader(true);
+    setFinishedLoading(false);
+    setTimeout(() => {
+      const totalCredits = subjects.reduce(
+        (total, subject) => total + parseFloat(subject.credits),
+        0
+      );
+      console.log("Total Credits:", totalCredits);
+
+      const weightedGrades = subjects.reduce((total, subject) => {
+        const gradePoints = getGradePoints(subject.grade);
+        const credits = parseFloat(subject.credits); // Add this line for debugging
+        console.log("Grade Points:", gradePoints);
+        console.log("Credits:", credits);
+        return total + gradePoints * credits;
+      }, 0);
+      console.log("Weighted Grades:", weightedGrades);
+
+      const calculatedGPA = weightedGrades / totalCredits;
+      setGPA(parseFloat(calculatedGPA.toFixed(2)));
+
+      setSubjects([]);
+      setFinishedLoading(true);
+      setShowLoader(false);
+    }, 5000);
+  };
+
+  if (showLoader) {
+    return <LoadingState finished={finishedLoading} />;
+  }
+
+  const getGradePoints = (grade: string): number => {
+    const numericGrade = parseFloat(grade);
+
+    if (!isNaN(numericGrade)) {
+      if (numericGrade >= 4.0) return 4.0;
+      else if (numericGrade >= 3.7) return 3.7;
+      else if (numericGrade >= 3.3) return 3.3;
+      else if (numericGrade >= 3.0) return 3.0;
+      else if (numericGrade >= 2.7) return 2.7;
+      else if (numericGrade >= 2.3) return 2.3;
+      else if (numericGrade >= 2.0) return 2.0;
+      else if (numericGrade >= 1.7) return 1.7;
+      else if (numericGrade >= 1.3) return 1.3;
+      else if (numericGrade >= 1.0) return 1.0;
+      else return 0.0; // For numeric grades below 1.0
+    } else {
+      switch (grade.trim().toUpperCase()) {
+        case "A":
+          return 1.0;
+        case "A-":
+          return 1.3;
+        case "B+":
+          return 1.7;
+        case "B":
+          return 2.0;
+        case "B-":
+          return 2.3;
+        case "C+":
+          return 2.7;
+        case "C":
+          return 3.0;
+        case "C-":
+          return 3.3;
+        case "D+":
+          return 3.7;
+        case "D":
+          return 4.0;
+        case "F":
+          return 0.0;
+
+        default:
+          console.log(`Unrecognized grade: ${grade}`);
+          return 0.0;
+      }
+    }
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <div className="px-4 md:px-8 lg:px-16 xl:px-20">
+      <Card className="mt-10">
+        <div className="flex flex-col w-full p-6 md:p-10 text-center shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-2xl">Calculate GPA</CardTitle>
+            <CardDescription>
+              Calculate your Grade Point Average based on subjects, grades, and
+              credits.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {subjects.map((subject, index) => (
+              <div
+                key={index}
+                className="flex md:flex-row flex-col items-center justify-center mt-5 w-full gap-3 md:gap-5"
+              >
+                <input
+                  type="text"
+                  placeholder="Subject Name"
+                  value={subject.name}
+                  onChange={(e) =>
+                    handleSubjectChange(index, "name", e.target.value)
+                  }
+                  className="border-none bg-slate-200/50 dark:bg-slate-800 outline-none px-2 py-1 rounded-md shadow-xl dark:text-white text-black placeholder:text-black dark:placeholder:text-white w-full"
+                />
+                <input
+                  type="text"
+                  placeholder="Grade"
+                  value={subject.grade}
+                  onChange={(e) =>
+                    handleSubjectChange(index, "grade", e.target.value)
+                  }
+                  className="border-none bg-slate-200/50 dark:bg-slate-800 outline-none px-2 py-1 rounded-md shadow-xl dark:text-white text-black placeholder:text-black dark:placeholder:text-white w-full"
+                />
+                <input
+                  type="text"
+                  placeholder="Credits"
+                  value={subject.credits}
+                  onChange={(e) =>
+                    handleSubjectChange(index, "credits", e.target.value)
+                  }
+                  className="border-none bg-slate-200/50 dark:bg-slate-800 outline-none px-2 py-1 rounded-md shadow-xl dark:text-white text-black placeholder:text-black dark:placeholder:text-white w-full"
+                />
+              </div>
+            ))}
+          </CardContent>
+          <div className="flex flex-col md:flex-row items-center justify-center md:items-end md:justify-end gap-2 mt-1 md:mr-8 mr-0">
+            <button
+              className="bg-black dark:bg-white hover:opacity-70 dark:text-black text-white w-full md:w-auto rounded-lg text-center py-2 px-4 text-xs"
+              onClick={handleAddSubject}
+            >
+              Add Subject
+            </button>
+            <button
+              className="bg-emerald-800 hover:opacity-70 dark:bg-emerald-300 dark:text-black text-white w-full md:w-auto rounded-lg text-center py-2 px-4 text-xs"
+              onClick={computeGPA}
+            >
+              Compute GPA
+            </button>
+          </div>
+          {gpa !== 0 && (
+            <div className="dark:bg-emerald-300 dark:text-black bg-emerald-800 text-white p-6 mt-3 md:mt-0 rounded-full w-[120px] h-[120px] text-center mx-auto border-4 border-green-800 shadow-lg">
+              <p>
+                Your GPA is <b>{gpa.toFixed(2)}</b>
+              </p>
+            </div>
+          )}
+
+          {/* Display Inputted Subjects */}
+          {subjects.length > 0 && (
+            <div className="mt-4">
+              <Table className="text-left">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Subject Name</TableHead>
+                    <TableHead>Course Grade</TableHead>
+                    <TableHead>Units</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {subjects.map((subject, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{subject.name}</TableCell>
+                      <TableCell>{subject.grade}</TableCell>
+                      <TableCell>{subject.credits}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </div>
-      </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
+      </Card>
+      <div className="flex items-center justify-center gap-3 mt-10 mb-2">
         <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
+          href="https://github.com/kylemastercoder14"
           target="_blank"
-          rel="noopener noreferrer"
+          className="bg-black dark:bg-white dark:text-black text-white p-2 rounded-md text-lg hover:opacity-70"
         >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
+          <AiFillGithub />
         </a>
-
         <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
+          href="https://facebook.com/kyleandre.lim29"
           target="_blank"
-          rel="noopener noreferrer"
+          className="bg-black dark:bg-white dark:text-black text-white p-2 rounded-md text-lg hover:opacity-70"
         >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
+          <AiFillFacebook />
         </a>
-
         <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
+          href="https://www.instagram.com/kylndrdvdlm"
           target="_blank"
-          rel="noopener noreferrer"
+          className="bg-black dark:bg-white dark:text-black text-white p-2 rounded-md text-lg hover:opacity-70"
         >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore the Next.js 13 playground.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
+          <AiFillInstagram />
         </a>
       </div>
-    </main>
-  )
+      <p className="text-center mb-5 text-sm">
+        GPA Wizard Calculator | Developed By: Kyle Andre Lim
+      </p>
+      <ThemeToggle />
+    </div>
+  );
 }
