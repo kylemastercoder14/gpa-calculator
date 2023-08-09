@@ -19,6 +19,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        {process.env.NODE_ENV === "production" && (
+          <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1444712637964127"
+          crossOrigin="anonymous"></script>
+        )}
+      </head>
       <body className={inter.className}>
         <ClientOnly>
         <ThemeProvider attribute='class' defaultTheme='light' enableSystem>
